@@ -1,5 +1,5 @@
 import { withDb } from "./postgres.mjs";
-export const EVENT_TYPES=["audio_completed"];
+export const EVENT_TYPES=["audio_completed"]; 
 export async function recordEvent(e){if(!e||!EVENT_TYPES.includes(e.type)||typeof e.poiId!=="string")return{error:"Unsupported analytics event.",statusCode:400}; await withDb(c=>c.query("INSERT INTO su_kien_thong_ke(loai_su_kien,poi_id,ngon_ngu,nguon,ma_phien,thoi_diem_tao) VALUES($1,$2,$3,$4,$5,NOW())",[e.type,e.poiId,e.language||null,e.source||null,e.sessionId||null])); return {event:e,statusCode:201};}
 export async function recordEvents(es){for(const e of es||[]){const r=await recordEvent(e);if(r.error)return r;}return{accepted:es?.length||0,statusCode:201};}
 export async function getPoiStats(){return withDb(async c=>{const rows=(await c.query("SELECT poi_id \"poiId\",COUNT(*) FILTER(WHERE loai_su_kien='audio_completed') listens FROM su_kien_thong_ke WHERE poi_id IS NOT NULL GROUP BY poi_id")).rows.map(x=>({...x,listens:Number(x.listens)}));return{pois:rows,total:{listens:rows.reduce((s,x)=>s+x.listens,0)},updatedAt:new Date().toISOString()};});}
