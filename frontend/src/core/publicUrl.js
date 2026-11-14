@@ -14,12 +14,15 @@ export function getPublicOrigin() {
   return window.location.origin;
 }
 
+// HashRouter: app lives under BASE_URL and routes go after "#".
+const appUrl = (route) => `${getPublicOrigin()}${import.meta.env.BASE_URL}#${route}`;
+
 export function buildPoiUrl(id, accessCode = "") {
   const params = new URLSearchParams({ source: "qr", mobile: "1" });
   if (accessCode) params.set("access", accessCode);
-  return `${getPublicOrigin()}/location/${encodeURIComponent(id)}?${params.toString()}`;
+  return appUrl(`/location/${encodeURIComponent(id)}?${params.toString()}`);
 }
 
 export function buildExploreUrl() {
-  return `${getPublicOrigin()}/?source=qr&mobile=1`;
+  return appUrl("/?source=qr&mobile=1");
 }
