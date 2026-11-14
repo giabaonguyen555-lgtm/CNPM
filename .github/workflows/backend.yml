@@ -1,4 +1,4 @@
-git statusname: Backend
+name: Backend
 
 on:
   workflow_call:
