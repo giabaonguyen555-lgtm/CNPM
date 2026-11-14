@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { languages, sites as staticSites } from "../data/hanoiHeritageSites";
 import { trackEvent } from "../analytics";
 
@@ -53,6 +53,7 @@ export function HeritageProvider({ children }) {
   });
   const [sites, setSites] = useState(staticSites);
   const [poiStatus, setPoiStatus] = useState("loading");
+  const loadedFromApi = useRef(false);
 
   useEffect(() => {
     localStorage.setItem("lang", language);
@@ -69,8 +70,10 @@ export function HeritageProvider({ children }) {
       if (!list.length) throw new Error("Empty POI list");
       setSites(list);
       setPoiStatus("api");
+      loadedFromApi.current = true;
     } catch (error) {
-      if (error?.name === "AbortError") return;
+      // A failed background refresh keeps API data already shown instead of reverting to static data.
+      if (error?.name === "AbortError" || loadedFromApi.current) return;
       setSites(staticSites);
       setPoiStatus("fallback");
     }
@@ -79,7 +82,15 @@ export function HeritageProvider({ children }) {
   useEffect(() => {
     const controller = new AbortController();
     loadPois(controller.signal);
-    return () => controller.abort();
+    // Pick up audio/POI edits made in the admin when the visitor returns to this tab.
+    const onVisible = () => { if (document.visibilityState === "visible") loadPois(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      controller.abort();
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
   }, [loadPois]);
 
   const selectLanguage = useCallback((nextLanguage, metadata = {}) => {
