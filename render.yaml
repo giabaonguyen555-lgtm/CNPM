@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: cnpm-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run db:init
+    startCommand: npm run server
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cnpm-db
+          property: connectionString
+      - key: ACCESS_TOKEN_SECRET
+        generateValue: true
+      - key: ADMIN_API_KEY
+        generateValue: true
+      - key: CLIENT_ORIGIN
+        value: https://cnpm-web.onrender.com
+      - key: DATA_DIR
+        value: /opt/render/project/src/backend/data
+      - key: UPLOADS_DIR
+        value: /opt/render/project/src/backend/uploads
+
+  - type: static
+    name: cnpm-web
+    buildCommand: npm ci && npm run build
+    staticPublishPath: frontend/dist
+    autoDeploy: true
+    envVars:
+      - key: VITE_ACCESS_API_URL
+        value: https://cnpm-api.onrender.com
+      - key: VITE_ADMIN_API_KEY
+        value: demo-admin-key
+
+databases:
+  - name: cnpm-db
+    plan: free
