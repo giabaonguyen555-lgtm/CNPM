@@ -1,5 +1,5 @@
 import http from "node:http";
-import { readFile, mkdir, stat } from "node:fs/promises";
+import { readFile, mkdir, stat, writeFile, unlink } from "node:fs/promises";
 import { createReadStream } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
@@ -308,13 +308,15 @@ const server = http.createServer(async (request, response) => {
       const data = await readBuffer(request, 20 * 1024 * 1024);
       await mkdir(mediaRoot("audio"), { recursive: true });
       const fileName = `${id}-${lang}-${Date.now()}-${randomUUID()}.${ext}`;
-      await import("node:fs/promises").then(({ writeFile }) =>
-        writeFile(path.join(mediaRoot("audio"), fileName), data),
-      );
-      return resultResponse(
-        response,
-        await setMedia(id, "audio", lang, fileName),
-      );
+      const filePath = path.join(mediaRoot("audio"), fileName);
+      await writeFile(filePath, data);
+      // DB lỗi thì xóa file vừa ghi để không để lại file rác
+      const result = await setMedia(id, "audio", lang, fileName).catch(async (error) => {
+        await unlink(filePath).catch(() => {});
+        throw error;
+      });
+      if (result.statusCode >= 400) await unlink(filePath).catch(() => {});
+      return resultResponse(response, result);
     }
     if (imageMatch && ["PUT", "DELETE"].includes(request.method)) {
       if (!admin(request))
@@ -331,13 +333,15 @@ const server = http.createServer(async (request, response) => {
       const data = await readBuffer(request, 5 * 1024 * 1024);
       await mkdir(mediaRoot("images"), { recursive: true });
       const fileName = `${id}-${Date.now()}-${randomUUID()}.${ext}`;
-      await import("node:fs/promises").then(({ writeFile }) =>
-        writeFile(path.join(mediaRoot("images"), fileName), data),
-      );
-      return resultResponse(
-        response,
-        await setMedia(id, "image", null, fileName),
-      );
+      const filePath = path.join(mediaRoot("images"), fileName);
+      await writeFile(filePath, data);
+      // DB lỗi thì xóa file vừa ghi để không để lại file rác
+      const result = await setMedia(id, "image", null, fileName).catch(async (error) => {
+        await unlink(filePath).catch(() => {});
+        throw error;
+      });
+      if (result.statusCode >= 400) await unlink(filePath).catch(() => {});
+      return resultResponse(response, result);
     }
     return send(response, 404, { error: "Not found." });
   } catch (error) {
