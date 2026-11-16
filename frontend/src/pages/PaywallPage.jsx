@@ -208,7 +208,7 @@ export default function PaywallPage() {
             id="access-code"
             value={code}
             onChange={(event) => setCode(event.target.value.toUpperCase())}
-            placeholder="HANOI-7K4P-92QX"
+            placeholder="HAN-7K4P-92QX"
             autoComplete="off"
             className="mt-2 w-full rounded-lg border border-slate-200 bg-white p-3 font-mono text-sm uppercase outline-none focus:border-slate-900"
           />

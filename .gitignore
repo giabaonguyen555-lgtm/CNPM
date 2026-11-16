@@ -5,3 +5,4 @@ backend/uploads/
 .env.*
 !.env.example
 .claude/worktrees/
+

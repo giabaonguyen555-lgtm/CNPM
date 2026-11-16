@@ -12,7 +12,7 @@ test("creates and redeems an access code for 24 hours", async () => {
 });
 
 test("rejects an unknown code", async () => {
-  const result = await redeemCode("HANOI-NOTFOUND-0000", "test-device");
+  const result = await redeemCode("HAN-NOTFOUND-0000", "test-device");
   assert.equal(result.statusCode, 404);
 });
 
